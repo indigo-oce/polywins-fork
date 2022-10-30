@@ -4,14 +4,17 @@
 # SETTINGS {{{ ---
 
 active_text_color="#f5f5f5"
-active_bg=
+active_bg="#0a0a0a"
 active_underline="#fdd835"
 
 inactive_text_color="#3f3f3f"
-inactive_bg=
+inactive_bg="#0a0a0a"
 inactive_underline=
 
 separator="·"
+separator_text_color="#3f3f3f"
+separator_bg="#0a0a0a"
+
 show="window_class" # options: window_title, window_class, window_classname
 forbidden_classes="Polybar Conky Gmrun"
 empty_desktop_message="Desktop"
@@ -102,7 +105,7 @@ active_left="%{F$active_text_color}"
 active_right="%{F-}"
 inactive_left="%{F$inactive_text_color}"
 inactive_right="%{F-}"
-separator="%{F$inactive_text_color}$separator%{F-}"
+separator="%{F$separator_text_color}%{B$separator_bg}$separator%{F-}"
 
 if [ -n "$active_underline" ]; then
 	active_left="${active_left}%{+u}%{u$active_underline}"
