@@ -17,7 +17,7 @@ separator_bg="#0a0a0a"
 
 show="window_class" # options: window_title, window_class, window_classname
 forbidden_classes="Polybar Conky Gmrun"
-empty_desktop_message="Desktop"
+empty_desktop_message=""
 
 char_limit=20
 max_windows=15
