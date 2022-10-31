@@ -43,8 +43,9 @@ wm_border_width=1 # setting this might be required for accurate resize position
 main() {
 	# If no argument passed...
 	if [ -z "$2" ]; then
-	    bspc subscribe desktop_focus node_focus node_add node_remove node_swap node_transfer node_state node_flag \
-                | while read -r line; do	# trigger on any bspwm event
+		generate_window_list
+		bspc subscribe desktop_focus node_focus node_add node_remove node_swap node_transfer node_state node_flag \
+				| while read -r line; do	# trigger on any bspwm event
 			generate_window_list
 		done
 
@@ -135,16 +136,6 @@ if [ -n "$inactive_bg" ]; then
 	inactive_right="%{B-}${inactive_right}"
 fi
 
-# get_active_wid() {
-# 	active_wid=$(xprop -root _NET_ACTIVE_WINDOW)
-# 	active_wid="${active_wid#*\# }"
-# 	active_wid="${active_wid%,*}" # Necessary for XFCE
-# 	while [ ${#active_wid} -lt 10 ]; do
-# 		active_wid="0x0${active_wid#*x}"
-# 	done
-# 	echo "$active_wid"
-# }
-
 get_active_wid() {
 	active_wid="$(bspc query -N -n .focused.local.window)"
 	echo "$active_wid"
@@ -158,7 +149,6 @@ get_active_workspace() {
 }
 
 generate_window_list() {
-	active_workspace=$(get_active_workspace)
 	active_wid=$(get_active_wid)
 	window_count=0
 	on_click="$0"
@@ -252,7 +242,7 @@ generate_window_list() {
 
 		window_count=$(( window_count + 1 ))
 	done <<-EOF
-	$(bsp-list-windows .local)
+	$(bspc query -m "${MONITOR:-focused}" -d .active -N -n .window | bsp-list-windows)
 	EOF
 
 	# After printing all the windows,
