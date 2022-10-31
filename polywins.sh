@@ -1,4 +1,6 @@
 #!/bin/sh
+#depends: bsp-list-windows
+
 # POLYWINS
 
 # SETTINGS {{{ ---
@@ -41,13 +43,10 @@ wm_border_width=1 # setting this might be required for accurate resize position
 main() {
 	# If no argument passed...
 	if [ -z "$2" ]; then
-		# ...print new window list every time
-		# the active window changes or
-		# a window is opened or closed
-		xprop -root -spy _NET_CLIENT_LIST _NET_ACTIVE_WINDOW |
-			while IFS= read -r _; do
-				generate_window_list
-			done
+	    bspc subscribe desktop_focus node_focus node_add node_remove node_swap node_transfer node_state node_flag \
+                | while read -r line; do	# trigger on any bspwm event
+			generate_window_list
+		done
 
 	# If arguments are passed, run requested on-click function
 	else
@@ -136,13 +135,18 @@ if [ -n "$inactive_bg" ]; then
 	inactive_right="%{B-}${inactive_right}"
 fi
 
+# get_active_wid() {
+# 	active_wid=$(xprop -root _NET_ACTIVE_WINDOW)
+# 	active_wid="${active_wid#*\# }"
+# 	active_wid="${active_wid%,*}" # Necessary for XFCE
+# 	while [ ${#active_wid} -lt 10 ]; do
+# 		active_wid="0x0${active_wid#*x}"
+# 	done
+# 	echo "$active_wid"
+# }
+
 get_active_wid() {
-	active_wid=$(xprop -root _NET_ACTIVE_WINDOW)
-	active_wid="${active_wid#*\# }"
-	active_wid="${active_wid%,*}" # Necessary for XFCE
-	while [ ${#active_wid} -lt 10 ]; do
-		active_wid="0x0${active_wid#*x}"
-	done
+	active_wid="$(bspc query -N -n .focused.local.window)"
 	echo "$active_wid"
 }
 
@@ -158,16 +162,13 @@ generate_window_list() {
 	active_wid=$(get_active_wid)
 	window_count=0
 	on_click="$0"
+	hidden_wids=$(bspc query -N -n .local.hidden.window)
+	floating_wids=$(bspc query -N -n .local.floating.window)
 
 	# Format each window name one by one
 	# Space and . are both used as IFS,
 	# because classname and class are separated by '.'
-	while IFS="[ .\.]" read -r wid ws cname cls host title; do
-		# Don't show the window if on another workspace (-1 = sticky)
-		if [ "$ws" != "$active_workspace" ] && [ "$ws" != "-1" ]; then
-			continue
-		fi
-
+	while IFS=" " read -r wid cname cls t title; do
 		# Don't show the window if its class is forbidden
 		case "$forbidden_classes" in
 			*$cls*) continue ;;
@@ -202,8 +203,28 @@ generate_window_list() {
 			w_name="$(echo "$w_name" | cut -c1-$((char_limit-1)))…"
 		fi
 
+        special="false" # ignore $add_spaces if $special="true"
+
+		# Surround with [ ] if hidden
+		# notify-send "$hidden_wids"
+		for i in $hidden_wids ; do
+			if [ $i = $wid ] ; then
+                w_name="[$w_name]"
+                special="true"
+            fi
+		done
+
+		# Surround with { } if floating
+		# notify-send "$floating_wids"
+		for i in $floating_wids ; do
+			if [ $i = $wid ] ; then
+				w_name="{$w_name}"
+                special="true"
+            fi
+        done
+
 		# Apply add-spaces setting
-		if [ "$add_spaces" = "true" ]; then
+		if [ "$add_spaces" = "true" ] && [ "$special" = "false" ] ; then
 			w_name=" $w_name "
 		fi
 
@@ -231,7 +252,7 @@ generate_window_list() {
 
 		window_count=$(( window_count + 1 ))
 	done <<-EOF
-	$(wmctrl -lx)
+	$(bsp-list-windows .local)
 	EOF
 
 	# After printing all the windows,
