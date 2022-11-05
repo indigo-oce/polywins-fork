@@ -1,5 +1,5 @@
 #!/bin/sh
-#depends: bsp-list-windows
+#depends: bsp-wins
 
 # POLYWINS
 
@@ -7,7 +7,7 @@
 
 # get colors from polybar config, format so it's sourcable by shell, NOTE: fragile
 cat ~/.config/polybar/cuts/colors.ini | sed '/^[;\[].*/d; /^$/d; s/ //; s/ /"/; s/$/"/; s/-/_/' > /tmp/polywins-colors \
-    && source /tmp/polywins-colors
+    && eval $(cat /tmp/polywins-colors)
 # sed operations: (comments in-line break so it's here)
 # - rm comments & empty lines
 # - add quotes
@@ -45,7 +45,7 @@ main() {
 	if [ -z "$2" ]; then
 		generate_window_list
 		bspc subscribe desktop_focus node_focus node_add node_remove node_swap node_transfer node_state node_flag \
-				| while read -r line; do	# trigger on any bspwm event
+			| while read -r line; do	# trigger on any bspwm event
 			generate_window_list
 		done
 
@@ -158,7 +158,7 @@ generate_window_list() {
 	# Format each window name one by one
 	# Space and . are both used as IFS,
 	# because classname and class are separated by '.'
-	while IFS=" " read -r wid cname cls t title; do
+	while IFS=" " read -r wid cls cname title; do
 		# Don't show the window if its class is forbidden
 		case "$forbidden_classes" in
 			*$cls*) continue ;;
@@ -193,15 +193,15 @@ generate_window_list() {
 			w_name="$(echo "$w_name" | cut -c1-$((char_limit-1)))…"
 		fi
 
-        special="false" # ignore $add_spaces if $special="true"
+		special="false" # ignore $add_spaces if $special="true"
 
 		# Surround with [ ] if hidden
 		# notify-send "$hidden_wids"
 		for i in $hidden_wids ; do
 			if [ $i = $wid ] ; then
-                w_name="[$w_name]"
-                special="true"
-            fi
+				w_name="[$w_name]"
+				special="true"
+			fi
 		done
 
 		# Surround with { } if floating
@@ -209,9 +209,9 @@ generate_window_list() {
 		for i in $floating_wids ; do
 			if [ $i = $wid ] ; then
 				w_name="{$w_name}"
-                special="true"
-            fi
-        done
+				special="true"
+			fi
+		done
 
 		# Apply add-spaces setting
 		if [ "$add_spaces" = "true" ] && [ "$special" = "false" ] ; then
@@ -242,7 +242,7 @@ generate_window_list() {
 
 		window_count=$(( window_count + 1 ))
 	done <<-EOF
-	$(bspc query -m "${MONITOR:-focused}" -d .active -N -n .window | bsp-list-windows)
+	$(bspc query -m "${MONITOR:-focused}" -d .active -N -n .window | bsp-wins -s)
 	EOF
 
 	# After printing all the windows,
