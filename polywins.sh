@@ -1,5 +1,5 @@
 #!/bin/sh
-#depends: bsp-wins
+#depends: bsp-wins wm-get-class+title
 
 # POLYWINS
 
@@ -212,6 +212,23 @@ generate_window_list() {
 				special="true"
 			fi
 		done
+
+		if [ "$cls" = "tabbed" ]; then
+			tabbed_wids=$(xwininfo -children -id $wid \
+							  | grep "^     0x" \
+							  | sed 's/^\s\+0x\(\S\+\).*/0x0\1/')
+			tabbed_wids_parent=$wid
+			w_name="/"
+			for i in $tabbed_wids ; do
+				eval "$(wm-get-class+title $i | sed "s/^\([^\t]*\)\t\([^\t]*\)\t\"\(.*\)\"/tabbed_class='\1' tabbed_cname='\2' tabbed_title='\3'/")"
+				# Show the user-selected window property
+				case "$show" in
+					"window_class")     w_name="$w_name $tabbed_class /" ;;
+					"window_classname") w_name="$w_name $tabbed_cname /" ;;
+					"window_title")     w_name="$w_name $tabbed_title /" ;;
+				esac
+			done
+		fi
 
 		# Apply add-spaces setting
 		if [ "$add_spaces" = "true" ] && [ "$special" = "false" ] ; then
