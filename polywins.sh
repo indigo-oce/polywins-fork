@@ -26,7 +26,7 @@ separator="·"
 separator_text_color=$foreground_alt
 separator_bg=$background
 
-show="window_class" # options: window_title, window_class, window_classname
+show="window_classname" # options: window_title, window_class, window_classname
 forbidden_classes="Polybar Conky Gmrun"
 empty_desktop_message=""
 
